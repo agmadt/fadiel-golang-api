@@ -7,13 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func FindProductVariantOption(c *gin.Context, pk string) (structs.ProductVariantOption, error) {
-
-	var productVariantOption structs.ProductVariantOption
+func FindProductVariantOption(c *gin.Context, productVariantOption structs.ProductVariantOption) (structs.ProductVariantOption, error) {
 
 	db := app.GetDB()
 
-	err := db.SelectOne(&productVariantOption, "SELECT id, product_variant_id, name  FROM product_variant_options WHERE id=?", pk)
+	err := db.SelectOne(&productVariantOption, "SELECT id, product_variant_id, name  FROM product_variant_options WHERE id=?", productVariantOption)
 
 	if err != nil {
 		c.JSON(404, gin.H{

@@ -25,9 +25,11 @@ func (controller CategoryController) Index(c *gin.Context) {
 
 func (controller CategoryController) Show(c *gin.Context) {
 
-	id := c.Param("id")
+	var category = structs.Category{
+		ID: c.Param("id"),
+	}
 
-	category, err := models.FindCategory(c, id)
+	category, err := models.FindCategory(c, category)
 	if err != nil {
 		return
 	}
@@ -75,12 +77,13 @@ func (controller CategoryController) Store(c *gin.Context) {
 
 func (controller CategoryController) Update(c *gin.Context) {
 
+	var category structs.Category
 	var categoryRequest structs.CategoryRequest
 	var failedValidations map[string]interface{}
 
-	id := c.Param("id")
+	category.ID = c.Param("id")
 
-	category, err := models.FindCategory(c, id)
+	category, err := models.FindCategory(c, category)
 	if err != nil {
 		return
 	}
@@ -120,11 +123,12 @@ func (controller CategoryController) Update(c *gin.Context) {
 
 func (controller CategoryController) Delete(c *gin.Context) {
 
+	var category structs.Category
 	var categories []structs.Category
 
-	id := c.Param("id")
+	category.ID = c.Param("id")
 
-	category, err := models.FindCategory(c, id)
+	category, err := models.FindCategory(c, category)
 	if err != nil {
 		return
 	}

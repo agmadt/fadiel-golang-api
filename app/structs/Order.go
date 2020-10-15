@@ -61,14 +61,3 @@ func (order *Order) Response() OrderResponse {
 
 	return response
 }
-
-func (ordersResponse *OrdersResponse) Response() OrdersResponse {
-	response := OrdersResponse{
-		Orders: ordersResponse.Orders,
-		Limit:  ordersResponse.Limit,
-		Page:   ordersResponse.Page,
-		Total:  ordersResponse.Total,
-	}
-
-	return response
-}

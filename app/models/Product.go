@@ -7,13 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func FindProduct(c *gin.Context, pk string) (structs.Product, error) {
-
-	var product structs.Product
+func FindProduct(c *gin.Context, product structs.Product) (structs.Product, error) {
 
 	db := app.GetDB()
 
-	err := db.SelectOne(&product, "SELECT id, name, price, description, created_at, updated_at FROM products WHERE id=?", pk)
+	err := db.SelectOne(&product, "SELECT id, name, price, description, created_at, updated_at FROM products WHERE id=?", product.ID)
 	if err != nil {
 		c.JSON(404, gin.H{
 			"message": "Product not found",

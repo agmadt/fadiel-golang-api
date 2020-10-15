@@ -81,13 +81,11 @@ func FindAllCategory(c *gin.Context) (structs.CategoryPagination, error) {
 	return categoryPagination, err
 }
 
-func FindCategory(c *gin.Context, pk string) (structs.Category, error) {
-
-	var category structs.Category
+func FindCategory(c *gin.Context, category structs.Category) (structs.Category, error) {
 
 	db := app.GetDB()
 
-	err := db.SelectOne(&category, "SELECT id, name FROM categories WHERE id=?", pk)
+	err := db.SelectOne(&category, "SELECT id, name FROM categories WHERE id=?", category.ID)
 
 	if err != nil {
 		c.JSON(404, gin.H{

@@ -18,19 +18,20 @@ var validate *validator.Validate
 func (controller OrderController) Index(c *gin.Context) {
 
 	orders, err := models.FindAllOrder(c)
-
 	if err != nil {
 		return
 	}
 
-	c.JSON(200, orders.Response())
+	c.JSON(200, orders)
 }
 
 func (controller OrderController) Show(c *gin.Context) {
 
-	id := c.Param("id")
+	var order = structs.Order{
+		ID: c.Param("id"),
+	}
 
-	order, err := models.FindOrder(c, id)
+	order, err := models.FindOrder(c, order)
 	if err != nil {
 		return
 	}
@@ -86,7 +87,12 @@ func (controller OrderController) Store(c *gin.Context) {
 	var totalOrder float32 = 0
 
 	for _, itemProduct := range orderRequest.Products {
-		product, err := models.FindProduct(c, itemProduct.ID)
+
+		var product = structs.Product{
+			ID: itemProduct.ID,
+		}
+
+		product, err := models.FindProduct(c, product)
 		if err != nil {
 			return
 		}
@@ -120,12 +126,20 @@ func (controller OrderController) Store(c *gin.Context) {
 		}
 
 		for _, itemVariant := range itemProduct.Variants {
-			productVariant, err := models.FindProductVariant(c, itemVariant.VariantID)
+			var productVariant = structs.ProductVariant{
+				ID: itemVariant.VariantID,
+			}
+
+			productVariant, err := models.FindProductVariant(c, productVariant)
 			if err != nil {
 				return
 			}
 
-			productVariantOption, err := models.FindProductVariantOption(c, itemVariant.OptionID)
+			var productVariantOption = structs.ProductVariantOption{
+				ID: itemVariant.OptionID,
+			}
+
+			productVariantOption, err = models.FindProductVariantOption(c, productVariantOption)
 			if err != nil {
 				return
 			}

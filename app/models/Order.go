@@ -22,7 +22,7 @@ func FindAllOrder(c *gin.Context) (structs.OrdersResponse, error) {
 	var page string = "1"
 	var limitInt int
 	var pageInt int
-	var offset string = "1"
+	var offset string = "0"
 	var sqlQuery string
 
 	if c.Query("limit") != "" {
@@ -45,14 +45,13 @@ func FindAllOrder(c *gin.Context) (structs.OrdersResponse, error) {
 	sqlQuery = "SELECT id, buyer_name, buyer_email, total, message, created_at FROM orders ORDER BY created_at DESC"
 	sqlQuery += " LIMIT " + offset + ", " + limit
 
-	fmt.Println(sqlQuery)
-
 	_, err := db.Select(&orders, sqlQuery)
 
 	if err != nil {
 		c.JSON(404, gin.H{
 			"message": "Error while getting all records",
 		})
+		fmt.Println(err)
 
 		return ordersResponse, err
 	}
@@ -81,13 +80,11 @@ func FindAllOrder(c *gin.Context) (structs.OrdersResponse, error) {
 	return ordersResponse, err
 }
 
-func FindOrder(c *gin.Context, pk string) (structs.Order, error) {
-
-	var order structs.Order
+func FindOrder(c *gin.Context, order structs.Order) (structs.Order, error) {
 
 	db := app.GetDB()
 
-	err := db.SelectOne(&order, "SELECT id, buyer_name, buyer_email, total, message, created_at FROM orders WHERE id=?", pk)
+	err := db.SelectOne(&order, "SELECT id, buyer_name, buyer_email, total, message, created_at FROM orders WHERE id=?", order.ID)
 
 	if err != nil {
 		c.JSON(404, gin.H{
