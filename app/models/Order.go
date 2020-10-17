@@ -12,12 +12,12 @@ import (
 	"github.com/google/uuid"
 )
 
-func FindAllOrder(c *gin.Context) (structs.OrdersResponse, error) {
+func FindAllOrder(c *gin.Context) (structs.OrderPagination, error) {
 
 	var orders []structs.Order
 	var totalResponse int
-	var orderResponseSlice []structs.OrderResponse
-	var ordersResponse structs.OrdersResponse
+	var orderResponses []structs.OrderResponse
+	var orderPagination structs.OrderPagination
 	var limit string = "10"
 	var page string = "1"
 	var limitInt int
@@ -53,7 +53,7 @@ func FindAllOrder(c *gin.Context) (structs.OrdersResponse, error) {
 		})
 		fmt.Println(err)
 
-		return ordersResponse, err
+		return orderPagination, err
 	}
 
 	err = db.SelectOne(&totalResponse, "SELECT count(id) as total FROM orders")
@@ -63,21 +63,21 @@ func FindAllOrder(c *gin.Context) (structs.OrdersResponse, error) {
 			"message": "Error while getting all records",
 		})
 
-		return ordersResponse, err
+		return orderPagination, err
 	}
 
 	for _, order := range orders {
-		orderResponseSlice = append(orderResponseSlice, order.Response())
+		orderResponses = append(orderResponses, order.Response())
 	}
 
-	ordersResponse = structs.OrdersResponse{
-		Orders: orderResponseSlice,
+	orderPagination = structs.OrderPagination{
+		Orders: orderResponses,
 		Total:  totalResponse,
 		Limit:  limitInt,
 		Page:   pageInt,
 	}
 
-	return ordersResponse, err
+	return orderPagination, err
 }
 
 func FindOrder(c *gin.Context, order structs.Order) (structs.Order, error) {

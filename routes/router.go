@@ -9,21 +9,28 @@ import (
 func Init() {
 	router := gin.Default()
 
-	testController := new(controllers.TestController)
 	categoryController := new(controllers.CategoryController)
 	orderController := new(controllers.OrderController)
+	productController := new(controllers.ProductController)
+	testController := new(controllers.TestController)
 
 	router.GET("/test", testController.Test)
 
 	router.GET("/categories", categoryController.Index)
-	router.GET("/categories/:id", categoryController.Show)
 	router.POST("/categories", categoryController.Store)
+	router.GET("/categories/:id", categoryController.Show)
 	router.PATCH("/categories/:id", categoryController.Update)
 	router.DELETE("/categories/:id", categoryController.Delete)
 
 	router.GET("/orders", orderController.Index)
-	router.GET("/orders/:id", orderController.Show)
 	router.POST("/orders", orderController.Store)
+	router.GET("/orders/:id", orderController.Show)
+
+	router.GET("/products", productController.Index)
+	router.POST("/products", productController.Store)
+	router.GET("/products/:id", productController.Show)
+	router.PATCH("/products/:id", productController.Update)
+	router.DELETE("/products/:id", productController.Delete)
 
 	router.Run()
 }

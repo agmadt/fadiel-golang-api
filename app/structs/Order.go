@@ -23,7 +23,7 @@ type OrderResponse struct {
 	CreatedAt  int64              `json:"created_at"`
 }
 
-type OrdersResponse struct {
+type OrderPagination struct {
 	Orders []OrderResponse `json:"orders"`
 	Limit  int             `json:"limit"`
 	Page   int             `json:"page"`

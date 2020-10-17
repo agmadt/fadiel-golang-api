@@ -5,6 +5,7 @@ import "time"
 type Category struct {
 	ID        string    `db:"id"`
 	Name      string    `db:"name"`
+	ProductID string    `db:"product_id"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 }
@@ -23,6 +24,10 @@ type CategoryPagination struct {
 
 type CategoryRequest struct {
 	Name string `json:"name" validate:"required"`
+}
+
+type CategoryProductRequest struct {
+	ID string `json:"id" validate:"required"`
 }
 
 func (category *Category) Response() CategoryResponse {
