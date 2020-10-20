@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"database/sql"
 	"fmt"
 	"golang-api/app/helpers"
 	"golang-api/app/models"
 	"golang-api/app/structs"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -17,12 +19,36 @@ var validate *validator.Validate
 
 func (controller OrderController) Index(c *gin.Context) {
 
-	orders, err := models.FindAllOrder(c)
+	var limit int = 10
+	var page int = 1
+	var err error
+
+	if c.Query("limit") != "" {
+		limit, err = strconv.Atoi(c.Query("limit"))
+		if err != nil {
+			c.JSON(500, gin.H{"message": "Limit is not a number"})
+			return
+		}
+	}
+
+	if c.Query("page") != "" {
+		page, err = strconv.Atoi(c.Query("page"))
+		if err != nil {
+			c.JSON(500, gin.H{"message": "Page is not a number"})
+			return
+		}
+	}
+
+	paginatedOrders, err := models.PaginateOrder(structs.PaginationParameters{
+		Limit: limit,
+		Page:  page,
+	})
 	if err != nil {
+		c.JSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	c.JSON(200, orders)
+	c.JSON(200, paginatedOrders)
 }
 
 func (controller OrderController) Show(c *gin.Context) {
@@ -31,13 +57,19 @@ func (controller OrderController) Show(c *gin.Context) {
 		ID: c.Param("id"),
 	}
 
-	order, err := models.FindOrder(c, order)
+	order, err := models.FindOrder(order)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(404, gin.H{"message": "Order not found"})
+		} else {
+			c.JSON(500, gin.H{"message": "Server error"})
+		}
 		return
 	}
 
-	orderProducts, err := models.FindOrderProducts(c, order)
-	if err != nil {
+	orderProducts, err := models.FindOrderProducts(order)
+	if err != nil && err != sql.ErrNoRows {
+		c.JSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -59,12 +91,9 @@ func (controller OrderController) Store(c *gin.Context) {
 	var orderProductCategories = []structs.OrderProductProductCategory{}
 
 	err := c.ShouldBindJSON(&orderRequest)
-
 	if err != nil {
-		c.JSON(400, gin.H{
-			"message": "Something wrong with the request",
-		})
-		fmt.Println(err)
+		c.JSON(400, gin.H{"message": "Something wrong with the request"})
+		fmt.Println("Store order bind json error", err)
 		return
 	}
 
@@ -77,7 +106,7 @@ func (controller OrderController) Store(c *gin.Context) {
 			failedValidations[errFailedField] = []string{helpers.ValidatorMessage(errFailedField, err.ActualTag(), err.Param())}
 		}
 
-		c.JSON(200, helpers.Validator{
+		c.JSON(422, helpers.Validator{
 			Message: "The given data was invalid",
 			Errors:  failedValidations,
 		})
@@ -92,14 +121,19 @@ func (controller OrderController) Store(c *gin.Context) {
 			ID: itemProduct.ID,
 		}
 
-		product, err := models.FindProduct(c, product)
+		product, err := models.FindProduct(product)
 		if err != nil {
+			if err == sql.ErrNoRows {
+				c.JSON(404, gin.H{"message": "Product not found"})
+			} else {
+				c.JSON(500, gin.H{"message": "Server error"})
+			}
 			return
 		}
 
-		productImages, err := models.FindProductImages(c, product)
-		if err != nil {
-			fmt.Println(err)
+		productImages, err := models.FindProductImages(product)
+		if err != nil && err != sql.ErrNoRows {
+			c.JSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
@@ -111,9 +145,9 @@ func (controller OrderController) Store(c *gin.Context) {
 			}
 		}
 
-		productCategories, err := models.FindProductCategories(c, product)
-		if err != nil {
-			fmt.Println(err)
+		productCategories, err := models.FindProductCategories(product)
+		if err != nil && err != sql.ErrNoRows {
+			c.JSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
@@ -130,8 +164,13 @@ func (controller OrderController) Store(c *gin.Context) {
 				ID: itemVariant.VariantID,
 			}
 
-			productVariant, err := models.FindProductVariant(c, productVariant)
+			productVariant, err := models.FindProductVariant(productVariant)
 			if err != nil {
+				if err == sql.ErrNoRows {
+					c.JSON(404, gin.H{"message": "Product variant not found"})
+				} else {
+					c.JSON(500, gin.H{"message": "Server error"})
+				}
 				return
 			}
 
@@ -139,8 +178,13 @@ func (controller OrderController) Store(c *gin.Context) {
 				ID: itemVariant.OptionID,
 			}
 
-			productVariantOption, err = models.FindProductVariantOption(c, productVariantOption)
+			productVariantOption, err = models.FindProductVariantOption(productVariantOption)
 			if err != nil {
+				if err == sql.ErrNoRows {
+					c.JSON(404, gin.H{"message": "Product variant option not found"})
+				} else {
+					c.JSON(500, gin.H{"message": "Server error"})
+				}
 				return
 			}
 
@@ -170,14 +214,16 @@ func (controller OrderController) Store(c *gin.Context) {
 
 	orderRequest.Total = totalOrder
 
-	order, err := models.StoreOrder(c, orderRequest)
+	order, err := models.StoreOrder(orderRequest)
 	if err != nil {
+		c.JSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	for _, orderProduct := range orderProducts {
-		_, err := models.StoreOrderProduct(c, order, orderProduct)
+		_, err := models.StoreOrderProduct(order, orderProduct)
 		if err != nil {
+			c.JSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	}

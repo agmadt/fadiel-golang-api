@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"golang-api/app"
@@ -8,37 +9,20 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-func FindAllOrder(c *gin.Context) (structs.OrderPagination, error) {
+func PaginateOrder(paginationParam structs.PaginationParameters) (structs.OrderPagination, error) {
 
 	var orders []structs.Order
 	var totalResponse int
-	var orderResponses []structs.OrderResponse
+	var orderResponses = []structs.OrderResponse{}
 	var orderPagination structs.OrderPagination
-	var limit string = "10"
-	var page string = "1"
-	var limitInt int
-	var pageInt int
 	var offset string = "0"
 	var sqlQuery string
+	var limit string = strconv.Itoa(paginationParam.Limit)
 
-	if c.Query("limit") != "" {
-		limit = c.Query("limit")
-	}
-
-	limitInt, _ = strconv.Atoi(limit)
-	pageInt, _ = strconv.Atoi(page)
-
-	if c.Query("page") != "" {
-		page = c.Query("page")
-		pageInt, _ := strconv.ParseInt(page, 10, 64)
-
-		offsetInt := ((int(pageInt)) - 1) * limitInt
-		offset = strconv.Itoa(int(offsetInt))
-	}
+	offset = strconv.Itoa(((paginationParam.Page) - 1) * paginationParam.Limit)
 
 	db := app.GetDB()
 
@@ -46,23 +30,14 @@ func FindAllOrder(c *gin.Context) (structs.OrderPagination, error) {
 	sqlQuery += " LIMIT " + offset + ", " + limit
 
 	_, err := db.Select(&orders, sqlQuery)
-
-	if err != nil {
-		c.JSON(404, gin.H{
-			"message": "Error while getting all records",
-		})
-		fmt.Println(err)
-
+	if err != nil && err != sql.ErrNoRows {
+		fmt.Println("Query to get all order error", err)
 		return orderPagination, err
 	}
 
 	err = db.SelectOne(&totalResponse, "SELECT count(id) as total FROM orders")
-
-	if err != nil {
-		c.JSON(404, gin.H{
-			"message": "Error while getting all records",
-		})
-
+	if err != nil && err != sql.ErrNoRows {
+		fmt.Println("Query to count all order error", err)
 		return orderPagination, err
 	}
 
@@ -73,31 +48,29 @@ func FindAllOrder(c *gin.Context) (structs.OrderPagination, error) {
 	orderPagination = structs.OrderPagination{
 		Orders: orderResponses,
 		Total:  totalResponse,
-		Limit:  limitInt,
-		Page:   pageInt,
+		Limit:  paginationParam.Limit,
+		Page:   paginationParam.Page,
 	}
 
 	return orderPagination, err
 }
 
-func FindOrder(c *gin.Context, order structs.Order) (structs.Order, error) {
+func FindOrder(order structs.Order) (structs.Order, error) {
 
 	db := app.GetDB()
 
 	err := db.SelectOne(&order, "SELECT id, buyer_name, buyer_email, total, message, created_at FROM orders WHERE id=?", order.ID)
-
 	if err != nil {
-		c.JSON(404, gin.H{
-			"message": "Order not found",
-		})
-
+		if err != sql.ErrNoRows {
+			fmt.Println("Find order error", err)
+		}
 		return order, err
 	}
 
 	return order, err
 }
 
-func FindOrderProducts(c *gin.Context, order structs.Order) ([]structs.OrderProductProduct, error) {
+func FindOrderProducts(order structs.Order) ([]structs.OrderProductProduct, error) {
 
 	var orderProducts = []structs.OrderProductProduct{}
 	var productsJSON []string
@@ -106,11 +79,7 @@ func FindOrderProducts(c *gin.Context, order structs.Order) ([]structs.OrderProd
 
 	_, err := db.Select(&productsJSON, "SELECT product FROM order_products WHERE order_id=?", order.ID)
 	if err != nil {
-		c.JSON(404, gin.H{
-			"message": "Error while getting products",
-		})
-		fmt.Println(err)
-
+		fmt.Println("Find order products error", err)
 		return orderProducts, err
 	}
 
@@ -122,11 +91,7 @@ func FindOrderProducts(c *gin.Context, order structs.Order) ([]structs.OrderProd
 
 			err = json.Unmarshal(productByte, &orderProduct)
 			if err != nil {
-				c.JSON(404, gin.H{
-					"message": "Error while getting products",
-				})
-				fmt.Println(err)
-
+				fmt.Println("Failed to unmarshal product from order products", err)
 				return orderProducts, err
 			}
 
@@ -137,7 +102,7 @@ func FindOrderProducts(c *gin.Context, order structs.Order) ([]structs.OrderProd
 	return orderProducts, err
 }
 
-func StoreOrder(c *gin.Context, request structs.OrderRequest) (structs.Order, error) {
+func StoreOrder(request structs.OrderRequest) (structs.Order, error) {
 
 	db := app.GetDB()
 
@@ -151,13 +116,8 @@ func StoreOrder(c *gin.Context, request structs.OrderRequest) (structs.Order, er
 	}
 
 	_, err := db.Exec("INSERT INTO orders(id, buyer_name, buyer_email, total, message, created_at) VALUES (?,?,?,?,?,?)", order.ID, order.BuyerName, order.BuyerEmail, order.Total, order.Message, order.CreatedAt)
-
 	if err != nil {
-		c.JSON(500, gin.H{
-			"message": "Error while storing data",
-		})
-		fmt.Println(err)
-
+		fmt.Println("Store order error", err)
 		return order, err
 	}
 

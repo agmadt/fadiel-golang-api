@@ -1,32 +1,30 @@
 package models
 
 import (
+	"database/sql"
 	"fmt"
 	"golang-api/app"
 	"golang-api/app/structs"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-func FindProductVariantOption(c *gin.Context, productVariantOption structs.ProductVariantOption) (structs.ProductVariantOption, error) {
+func FindProductVariantOption(productVariantOption structs.ProductVariantOption) (structs.ProductVariantOption, error) {
 
 	db := app.GetDB()
 
 	err := db.SelectOne(&productVariantOption, "SELECT id, product_variant_id, name  FROM product_variant_options WHERE id=?", productVariantOption)
-
 	if err != nil {
-		c.JSON(404, gin.H{
-			"message": "Product variant not found",
-		})
-
+		if err != sql.ErrNoRows {
+			fmt.Println("Find product variant option error", err)
+		}
 		return productVariantOption, err
 	}
 
 	return productVariantOption, err
 }
 
-func StoreProductVariantOption(c *gin.Context, request structs.ProductVariantOptionRequest, productVariant structs.ProductVariant) (structs.ProductVariantOption, error) {
+func StoreProductVariantOption(request structs.ProductVariantOptionRequest, productVariant structs.ProductVariant) (structs.ProductVariantOption, error) {
 
 	db := app.GetDB()
 
@@ -36,13 +34,8 @@ func StoreProductVariantOption(c *gin.Context, request structs.ProductVariantOpt
 	}
 
 	_, err := db.Exec("INSERT INTO product_variant_options(id, product_variant_id, name) VALUES (?,?,?)", productVariantOption.ID, productVariant.ID, productVariantOption.Name)
-
 	if err != nil {
-		c.JSON(500, gin.H{
-			"message": "Error while storing data",
-		})
-		fmt.Println(err)
-
+		fmt.Println("Store product variant option error", err)
 		return productVariantOption, err
 	}
 

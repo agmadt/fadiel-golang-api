@@ -1,42 +1,26 @@
 package models
 
 import (
+	"database/sql"
 	"fmt"
 	"golang-api/app"
 	"golang-api/app/structs"
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-func FindAllCategory(c *gin.Context) (structs.CategoryPagination, error) {
+func PaginateCategory(paginationParam structs.PaginationParameters) (structs.CategoryPagination, error) {
 	var categories []structs.Category
 	var totalResponse int
 	var categoryResponses []structs.CategoryResponse
 	var categoryPagination structs.CategoryPagination
-	var limit string = "10"
-	var page string = "1"
-	var limitInt int
-	var pageInt int
 	var offset string = "0"
 	var sqlQuery string
+	var limit string = strconv.Itoa(paginationParam.Limit)
 
-	if c.Query("limit") != "" {
-		limit = c.Query("limit")
-	}
-
-	limitInt, _ = strconv.Atoi(limit)
-	pageInt, _ = strconv.Atoi(page)
-
-	if c.Query("page") != "" {
-		page = c.Query("page")
-		pageInt, _ := strconv.ParseInt(page, 10, 64)
-
-		offsetInt := ((int(pageInt)) - 1) * limitInt
-		offset = strconv.Itoa(int(offsetInt))
-	}
+	offset = strconv.Itoa(((paginationParam.Page) - 1) * paginationParam.Limit)
 
 	db := app.GetDB()
 
@@ -44,26 +28,14 @@ func FindAllCategory(c *gin.Context) (structs.CategoryPagination, error) {
 	sqlQuery += " LIMIT " + offset + ", " + limit
 
 	_, err := db.Select(&categories, sqlQuery)
-
-	fmt.Println(sqlQuery)
-
-	if err != nil {
-		c.JSON(404, gin.H{
-			"message": "Error while getting all records",
-		})
-		fmt.Println(err)
-
+	if err != nil && err != sql.ErrNoRows {
+		fmt.Println("Query to get category error", err)
 		return categoryPagination, err
 	}
 
 	err = db.SelectOne(&totalResponse, "SELECT count(id) as total FROM categories")
-
-	if err != nil {
-		c.JSON(404, gin.H{
-			"message": "Error while getting all records",
-		})
-		fmt.Println(err)
-
+	if err != nil && err != sql.ErrNoRows {
+		fmt.Println("Query to count all category error", err)
 		return categoryPagination, err
 	}
 
@@ -74,51 +46,44 @@ func FindAllCategory(c *gin.Context) (structs.CategoryPagination, error) {
 	categoryPagination = structs.CategoryPagination{
 		Categories: categoryResponses,
 		Total:      totalResponse,
-		Limit:      limitInt,
-		Page:       pageInt,
+		Limit:      paginationParam.Limit,
+		Page:       paginationParam.Page,
 	}
 
-	return categoryPagination, err
+	return categoryPagination, nil
 }
 
-func FindCategory(c *gin.Context, category structs.Category) (structs.Category, error) {
+func FindCategory(category structs.Category) (structs.Category, error) {
 
 	db := app.GetDB()
 
 	err := db.SelectOne(&category, "SELECT id, name FROM categories WHERE id=?", category.ID)
-
 	if err != nil {
-		c.JSON(404, gin.H{
-			"message": "Category not found",
-		})
-		fmt.Println(err)
-
+		if err != sql.ErrNoRows {
+			fmt.Println("Find category error", err)
+		}
 		return category, err
 	}
 
-	return category, err
+	return category, nil
 }
 
-func FindCategoryProducts(c *gin.Context, category structs.Category) ([]structs.Category, error) {
+func FindCategoryProducts(category structs.Category) ([]structs.Category, error) {
 
-	var categories []structs.Category
+	var categories = []structs.Category{}
 
 	db := app.GetDB()
 
 	_, err := db.Select(&categories, "SELECT id FROM product_categories WHERE category_id=?", category.ID)
 	if err != nil {
-		c.JSON(404, gin.H{
-			"message": "Category products not found",
-		})
-		fmt.Println(err)
-
+		fmt.Println("Find category products error", err)
 		return categories, err
 	}
 
-	return categories, err
+	return categories, nil
 }
 
-func StoreCategory(c *gin.Context, request structs.CategoryRequest) (structs.Category, error) {
+func StoreCategory(request structs.CategoryRequest) (structs.Category, error) {
 
 	var category = structs.Category{
 		ID:        uuid.New().String(),
@@ -130,53 +95,38 @@ func StoreCategory(c *gin.Context, request structs.CategoryRequest) (structs.Cat
 	db := app.GetDB()
 
 	_, err := db.Exec("INSERT INTO categories(id, name, created_at, updated_at) VALUES (?,?,?,?)", category.ID, category.Name, category.CreatedAt, category.UpdatedAt)
-
 	if err != nil {
-		c.JSON(500, gin.H{
-			"message": "Error while storing data",
-		})
-		fmt.Println(err)
-
+		fmt.Println("Store category error", err)
 		return category, err
 	}
 
-	return category, err
+	return category, nil
 }
 
-func UpdateCategory(c *gin.Context, request structs.CategoryRequest, category structs.Category) (structs.Category, error) {
+func UpdateCategory(request structs.CategoryRequest, category structs.Category) (structs.Category, error) {
 
 	category.Name = request.Name
 
 	db := app.GetDB()
 
 	_, err := db.Exec("UPDATE categories SET name = ? WHERE id = ?", category.Name, category.ID)
-
 	if err != nil {
-		c.JSON(500, gin.H{
-			"message": "Error while updating data",
-		})
-		fmt.Println(err)
-
+		fmt.Println("Update category error", err)
 		return category, err
 	}
 
-	return category, err
+	return category, nil
 }
 
-func DeleteCategory(c *gin.Context, category structs.Category) (structs.Category, error) {
+func DeleteCategory(category structs.Category) (structs.Category, error) {
 
 	db := app.GetDB()
 
 	_, err := db.Exec("DELETE FROM categories WHERE id = ?", category.ID)
-
 	if err != nil {
-		c.JSON(500, gin.H{
-			"message": "Server error",
-		})
-		fmt.Println(err)
-
+		fmt.Println("Delete category error", err)
 		return category, err
 	}
 
-	return category, err
+	return category, nil
 }
