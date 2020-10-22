@@ -2,6 +2,7 @@ package routes
 
 import (
 	"golang-api/app/controllers"
+	"golang-api/app/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,22 +23,22 @@ func Init() {
 	router.GET("/test", testController.Test)
 
 	router.GET("/categories", categoryController.Index)
-	router.POST("/categories/:id", categoryController.Store)
-	router.GET("/categories/:id", categoryController.Show)
-	router.PATCH("/categories/:id", categoryController.Update)
-	router.DELETE("/categories/:id", categoryController.Delete)
+	router.POST("/categories", middlewares.JWTAuth(), categoryController.Store)
+	router.GET("/categories/:id", middlewares.JWTAuth(), categoryController.Show)
+	router.PATCH("/categories/:id", middlewares.JWTAuth(), categoryController.Update)
+	router.DELETE("/categories/:id", middlewares.JWTAuth(), categoryController.Delete)
 
-	router.GET("/orders", orderController.Index)
+	router.GET("/orders", middlewares.JWTAuth(), orderController.Index)
 	router.POST("/orders", orderController.Store)
 	router.GET("/orders/:id", orderController.Show)
 
 	router.GET("/products", productController.Index)
-	router.POST("/products", productController.Store)
+	router.POST("/products", middlewares.JWTAuth(), productController.Store)
 	router.GET("/products/:id", productController.Show)
-	router.PATCH("/products/:id", productController.Update)
-	router.DELETE("/products/:id", productController.Delete)
+	router.PATCH("/products/:id", middlewares.JWTAuth(), productController.Update)
+	router.DELETE("/products/:id", middlewares.JWTAuth(), productController.Delete)
 
-	router.POST("/media", mediaController.Store)
+	router.POST("/media", middlewares.JWTAuth(), mediaController.Store)
 
 	router.Run()
 }

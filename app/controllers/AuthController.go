@@ -6,7 +6,10 @@ import (
 	"golang-api/app/helpers"
 	"golang-api/app/models"
 	"golang-api/app/structs"
+	"os"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/iancoleman/strcase"
@@ -61,14 +64,26 @@ func (controller AuthController) Login(c *gin.Context) {
 		return
 	}
 
-	loginResponseData := structs.LoginResponseData{
-		ID:    user.ID,
-		Email: loginRequest.Email,
-		Name:  user.Name,
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"exp": time.Now().Add(time.Hour * 24 * 10).Unix(),
+		"iat": time.Now().Unix(),
+	})
+
+	// Sign and get the complete encoded token as a string using the secret
+	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	if err != nil {
+		c.JSON(500, gin.H{"message": "Server error"})
+		fmt.Println("Error when creating jwt token", err)
+		return
 	}
 
 	loginResponse := structs.LoginResponse{
-		Data: loginResponseData,
+		Token: tokenString,
+		Data: structs.LoginResponseData{
+			ID:    user.ID,
+			Email: loginRequest.Email,
+			Name:  user.Name,
+		},
 	}
 
 	c.JSON(200, loginResponse)
