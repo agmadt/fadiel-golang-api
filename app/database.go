@@ -2,6 +2,7 @@ package app
 
 import (
 	"database/sql"
+	"os"
 
 	_ "github.com/go-sql-driver/mysql"
 
@@ -12,8 +13,8 @@ var DB *gorp.DbMap
 
 func InitDatabase() *gorp.DbMap {
 	// username:password@protocol(address)/dbname?params
-	dsn := "root:@tcp(localhost:3306)/fa_diel?parseTime=true"
-	db, err := sql.Open("mysql", dsn)
+	dsn := os.Getenv("DB_USERNAME") + ":" + os.Getenv("DB_PASSWORD") + "@tcp(" + os.Getenv("DB_HOST") + ":3306)/" + os.Getenv("DB_DATABASE") + "?parseTime=true"
+	db, err := sql.Open(os.Getenv("DB_CONNECTION"), dsn)
 	if err != nil {
 		panic("failed to connect database")
 	}

@@ -8,16 +8,18 @@ import (
 
 func Init() {
 	router := gin.Default()
+	router.MaxMultipartMemory = 8 << 20 // 8 MiB
 
 	categoryController := new(controllers.CategoryController)
 	orderController := new(controllers.OrderController)
 	productController := new(controllers.ProductController)
+	mediaController := new(controllers.MediaController)
 	testController := new(controllers.TestController)
 
 	router.GET("/test", testController.Test)
 
 	router.GET("/categories", categoryController.Index)
-	router.POST("/categories", categoryController.Store)
+	router.POST("/categories/:id", categoryController.Store)
 	router.GET("/categories/:id", categoryController.Show)
 	router.PATCH("/categories/:id", categoryController.Update)
 	router.DELETE("/categories/:id", categoryController.Delete)
@@ -31,6 +33,8 @@ func Init() {
 	router.GET("/products/:id", productController.Show)
 	router.PATCH("/products/:id", productController.Update)
 	router.DELETE("/products/:id", productController.Delete)
+
+	router.POST("/media", mediaController.Store)
 
 	router.Run()
 }
