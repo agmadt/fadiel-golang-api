@@ -10,11 +10,14 @@ func Init() {
 	router := gin.Default()
 	router.MaxMultipartMemory = 8 << 20 // 8 MiB
 
+	authController := new(controllers.AuthController)
 	categoryController := new(controllers.CategoryController)
 	orderController := new(controllers.OrderController)
 	productController := new(controllers.ProductController)
 	mediaController := new(controllers.MediaController)
 	testController := new(controllers.TestController)
+
+	router.POST("/auth/login", authController.Login)
 
 	router.GET("/test", testController.Test)
 
