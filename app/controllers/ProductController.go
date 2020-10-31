@@ -253,6 +253,21 @@ func (controller ProductController) Store(c *gin.Context) {
 		return
 	}
 
+	if len(productRequest.Categories) > 0 {
+		for _, productCategoryRequest := range productRequest.Categories {
+
+			_, err := models.FindCategory(structs.Category{ID: productCategoryRequest.ID})
+			if err != nil {
+				if err == sql.ErrNoRows {
+					c.JSON(404, gin.H{"message": "Category not found"})
+				} else {
+					c.JSON(500, gin.H{"message": "Server error"})
+				}
+				return
+			}
+		}
+	}
+
 	product, err := models.StoreProduct(productRequest)
 	if err != nil {
 		c.JSON(500, gin.H{"message": "Server error"})
@@ -290,16 +305,7 @@ func (controller ProductController) Store(c *gin.Context) {
 	if len(productRequest.Categories) > 0 {
 		for _, productCategoryRequest := range productRequest.Categories {
 
-			category, err := models.FindCategory(structs.Category{ID: productCategoryRequest.ID})
-			if err != nil {
-				if err == sql.ErrNoRows {
-					c.JSON(404, gin.H{"message": "Category not found"})
-				} else {
-					c.JSON(500, gin.H{"message": "Server error"})
-				}
-				return
-			}
-
+			category := structs.Category{ID: productCategoryRequest.ID}
 			_, err = models.StoreProductCategory(category, product)
 			if err != nil {
 				c.JSON(500, gin.H{"message": "Server error"})
@@ -347,6 +353,20 @@ func (controller ProductController) Update(c *gin.Context) {
 			Errors:  failedValidations,
 		})
 		return
+	}
+
+	if len(productRequest.Categories) > 0 {
+		for _, productCategoryRequest := range productRequest.Categories {
+			_, err := models.FindCategory(structs.Category{ID: productCategoryRequest.ID})
+			if err != nil {
+				if err == sql.ErrNoRows {
+					c.JSON(404, gin.H{"message": "Category not found"})
+				} else {
+					c.JSON(500, gin.H{"message": "Server error"})
+				}
+				return
+			}
+		}
 	}
 
 	product, err = models.UpdateProduct(productRequest, product)
@@ -403,17 +423,7 @@ func (controller ProductController) Update(c *gin.Context) {
 		}
 
 		for _, productCategoryRequest := range productRequest.Categories {
-
-			category, err := models.FindCategory(structs.Category{ID: productCategoryRequest.ID})
-			if err != nil {
-				if err == sql.ErrNoRows {
-					c.JSON(404, gin.H{"message": "Category not found"})
-				} else {
-					c.JSON(500, gin.H{"message": "Server error"})
-				}
-				return
-			}
-
+			category := structs.Category{ID: productCategoryRequest.ID}
 			_, err = models.StoreProductCategory(category, product)
 			if err != nil {
 				c.JSON(500, gin.H{"message": "Server error"})
