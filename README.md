@@ -10,6 +10,7 @@ This project goal is to make an interchangeable API endpoint for a simple Shop u
 
 # Local Usage
 Make sure to have Air installed -- [a Live reload for Golang project](https://github.com/cosmtrek/air)
+
 Change `.env.example` to `.env` and change the configuration accordingly, then
 ```sh
 $ go get
