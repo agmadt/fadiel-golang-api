@@ -67,6 +67,7 @@ func (controller AuthController) Login(c *gin.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"exp": time.Now().Add(time.Hour * 24 * 10).Unix(),
 		"iat": time.Now().Unix(),
+		"sub": user.ID,
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
