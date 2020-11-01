@@ -11,6 +11,8 @@ func Init() {
 	router := gin.Default()
 	router.MaxMultipartMemory = 8 << 20 // 8 MiB
 
+	router.Use(middlewares.CORSMiddleware())
+
 	authController := new(controllers.AuthController)
 	categoryController := new(controllers.CategoryController)
 	orderController := new(controllers.OrderController)
