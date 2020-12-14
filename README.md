@@ -3,7 +3,7 @@ Fa`Diel is the name of the world in which at least some of the games of the Mana
 This project goal is to make an interchangeable API endpoint for a simple Shop using PHP, JavaScript, and Golang programming language
 
 # API Specification and Documentation
-- http://adhityoagam.com:8003/
+- https://fadiel.adhityoagam.com/apidoc/
 
 # Base API URL
 - https://fadiel.adhityoagam.com/golang
